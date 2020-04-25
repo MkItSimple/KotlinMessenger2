@@ -1,9 +1,11 @@
-package com.example.kotlinmessenger2
+package com.example.kotlinmessenger2.messages
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import com.example.kotlinmessenger2.R
+import com.example.kotlinmessenger2.models.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -43,8 +45,23 @@ class NewMessageActivity : AppCompatActivity() {
                     Log.d("NewMessage", it.toString())
                     val user = it.getValue(User::class.java)
                     if (user != null && user.uid != uid) {
-                        adapter.add(UserItem(user))
+                        adapter.add(
+                            UserItem(
+                                user
+                            )
+                        )
                     }
+                }
+
+                adapter.setOnItemClickListener { item, view ->
+
+                    val userItem = item as UserItem
+
+                    val intent = Intent(view.context, ChatLogActivity::class.java)
+                    intent.putExtra(USER_KEY, userItem.user)
+                    startActivity(intent)
+
+                    finish()
                 }
 
                 recyclerview_newmessage.adapter = adapter
