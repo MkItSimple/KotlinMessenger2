@@ -41,7 +41,7 @@ class LatestMessagesActivity : AppCompatActivity() {
             }
         }
 
-        return super.onOptionsItemSelected(item)
+        return super.onOptionsItemSelected(item!!)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
