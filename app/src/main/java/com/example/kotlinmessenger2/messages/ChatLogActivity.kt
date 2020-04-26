@@ -23,15 +23,16 @@ class ChatLogActivity : AppCompatActivity() {
 
         val adapter = GroupAdapter<ViewHolder>()
 
-        adapter.add(ChatItem("Just a text"))
-        adapter.add(ChatItem("Just a text"))
-        adapter.add(ChatItem("Just a text"))
+        adapter.add(ChatFromItem("Just a text"))
+        adapter.add(ChatToItem("Just a text"))
+        adapter.add(ChatFromItem("Just a text"))
+        adapter.add(ChatToItem("Just a text"))
 
         recyclerview_chat_log.adapter = adapter
     }
 }
 
-class ChatItem(val text: String): Item<ViewHolder>(){
+class ChatFromItem(val text: String): Item<ViewHolder>(){
     override fun getLayout(): Int {
         return R.layout.chat_from_row
     }
@@ -39,5 +40,14 @@ class ChatItem(val text: String): Item<ViewHolder>(){
     override fun bind(viewHolder: ViewHolder, position: Int) {
         viewHolder.itemView.textview_from_row.text = text
     }
+}
 
+class ChatToItem(val text: String): Item<ViewHolder>(){
+    override fun getLayout(): Int {
+        return R.layout.chat_to_row
+    }
+
+    override fun bind(viewHolder: ViewHolder, position: Int) {
+        viewHolder.itemView.textview_to_row.text = text
+    }
 }
