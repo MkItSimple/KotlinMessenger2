@@ -6,10 +6,12 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import androidx.recyclerview.widget.DividerItemDecoration
 import com.example.kotlinmessenger2.R
 import com.example.kotlinmessenger2.RegisterActivity
 import com.example.kotlinmessenger2.models.ChatMessage
 import com.example.kotlinmessenger2.models.User
+import com.example.kotlinmessenger2.views.LatestMessageRow
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.xwray.groupie.GroupAdapter
@@ -30,6 +32,19 @@ class LatestMessagesActivity : AppCompatActivity() {
         setContentView(R.layout.activity_latest_messages)
 
         recyclerview_latest_messages.adapter = adapter
+        recyclerview_latest_messages.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
+
+        // set item click listener on your adapter
+        adapter.setOnItemClickListener { item, view ->
+            Log.d(TAG, "123")
+            val intent = Intent(this, ChatLogActivity::class.java)
+
+            // we are missing the chat partner user
+
+            val row = item as LatestMessageRow
+            intent.putExtra(NewMessageActivity.USER_KEY, row.chatPartnerUser)
+            startActivity(intent)
+        }
 
         //setupDummyRows()
         listenForLatestMessages()
@@ -75,16 +90,6 @@ class LatestMessagesActivity : AppCompatActivity() {
 
             }
         })
-    }
-
-    class LatestMessageRow(val chatMessage: ChatMessage): Item<ViewHolder>(){
-        override fun getLayout(): Int {
-            return R.layout.latest_message_row
-        }
-
-        override fun bind(viewHolder: ViewHolder, position: Int) {
-            viewHolder.itemView.message_textview_latest_message.text = chatMessage.text
-        }
     }
 
     val adapter = GroupAdapter<ViewHolder>()
