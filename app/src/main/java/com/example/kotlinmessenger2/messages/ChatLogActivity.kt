@@ -17,7 +17,7 @@ import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.ViewHolder
 import kotlinx.android.synthetic.main.activity_chat_log.*
 
-//
+// Convert to MVVM Dagger2
 class ChatLogActivity : AppCompatActivity() {
 
     companion object {
