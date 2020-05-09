@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DividerItemDecoration
 import com.example.kotlinmessenger2.R
 import com.example.kotlinmessenger2.RegisterActivity
@@ -27,9 +28,19 @@ class LatestMessagesActivity : AppCompatActivity() {
         val TAG = "LatestMessages"
     }
 
+    val adapter = GroupAdapter<ViewHolder>()
+
+    val latestMessagesMap = HashMap<String, ChatMessage>()
+
+    private lateinit var latestMessageViewModel: LatestMessageViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_latest_messages)
+
+        supportActionBar?.title = "Latest Messages"
+
+        latestMessageViewModel = ViewModelProviders.of(this)[LatestMessageViewModel::class.java]
 
         recyclerview_latest_messages.adapter = adapter
         recyclerview_latest_messages.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
@@ -49,18 +60,10 @@ class LatestMessagesActivity : AppCompatActivity() {
         //setupDummyRows()
         listenForLatestMessages()
 
-        fetchCurrentUser()
+        //fetchCurrentUser()
+        latestMessageViewModel.fetchCurrentUser()
 
         verifyUserIsLoggedIn()
-    }
-
-    val latestMessagesMap = HashMap<String, ChatMessage>()
-
-    private fun refreshRecyclerViewMessages() {
-        adapter.clear()
-        latestMessagesMap.values.forEach {
-            adapter.add(LatestMessageRow(it))
-        }
     }
 
     // will notify us every time there is changes in latest-messages on firebase
@@ -92,33 +95,28 @@ class LatestMessagesActivity : AppCompatActivity() {
         })
     }
 
-    val adapter = GroupAdapter<ViewHolder>()
-
-    //private fun setupDummyRows() {
-        //val adapter = GroupAdapter<ViewHolder>()
-
-        //adapter.add(LatestMessageRow())
-        //adapter.add(LatestMessageRow())
-        //adapter.add(LatestMessageRow())
-
-        //recyclerview_latest_messages.adapter = adapter
-    //}
-
-    private fun fetchCurrentUser() {
-        val uid = FirebaseAuth.getInstance().uid
-        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid")
-        ref.addListenerForSingleValueEvent(object: ValueEventListener {
-
-            override fun onDataChange(p0: DataSnapshot) {
-                currentUser = p0.getValue(User::class.java)
-                Log.d("LatestMessages", "Current user ${currentUser?.profileImageUrl}")
-            }
-
-            override fun onCancelled(p0: DatabaseError) {
-
-            }
-        })
+    private fun refreshRecyclerViewMessages() {
+        adapter.clear()
+        latestMessagesMap.values.forEach {
+            adapter.add(LatestMessageRow(it))
+        }
     }
+
+//    private fun fetchCurrentUser() {
+//        val uid = FirebaseAuth.getInstance().uid
+//        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid")
+//        ref.addListenerForSingleValueEvent(object: ValueEventListener {
+//
+//            override fun onDataChange(p0: DataSnapshot) {
+//                currentUser = p0.getValue(User::class.java)
+//                Log.d("LatestMessages", "Current user ${currentUser?.profileImageUrl}")
+//            }
+//
+//            override fun onCancelled(p0: DatabaseError) {
+//
+//            }
+//        })
+//    }
 
     private fun verifyUserIsLoggedIn() {
         val uid = FirebaseAuth.getInstance().uid
