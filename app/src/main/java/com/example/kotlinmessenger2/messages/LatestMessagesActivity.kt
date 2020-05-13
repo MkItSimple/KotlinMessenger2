@@ -1,11 +1,12 @@
 package com.example.kotlinmessenger2.messages
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DividerItemDecoration
 import com.example.kotlinmessenger2.R
@@ -14,17 +15,19 @@ import com.example.kotlinmessenger2.models.ChatMessage
 import com.example.kotlinmessenger2.models.User
 import com.example.kotlinmessenger2.views.LatestMessageRow
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
 import com.xwray.groupie.GroupAdapter
-import com.xwray.groupie.Item
 import com.xwray.groupie.ViewHolder
 import kotlinx.android.synthetic.main.activity_latest_messages.*
-import kotlinx.android.synthetic.main.latest_message_row.view.*
 
 class LatestMessagesActivity : AppCompatActivity() {
 
     companion object {
         var currentUser: User? = null
+
         val TAG = "LatestMessages"
     }
 
@@ -58,14 +61,23 @@ class LatestMessagesActivity : AppCompatActivity() {
         }
 
         //setupDummyRows()
-        listenForLatestMessages()
+        //listenForLatestMessages()
+        latestMessageViewModel.listenForLatestMessages()
+        latestMessageViewModel.chatMessage.observe(this, Observer { chatMessage ->
+            //latestMessagesMap[p0.key!!] = chatMessage
+        })
 
         //fetchCurrentUser()
         latestMessageViewModel.fetchCurrentUser()
+        latestMessageViewModel.currentUser.observe(this, Observer { cUser ->
+            currentUser = cUser
+            //Log.d(TAG, "CurrentUser Name: "+ currentUser?.username)
+        })
 
         verifyUserIsLoggedIn()
     }
 
+    // move to viewmodel
     // will notify us every time there is changes in latest-messages on firebase
     private fun listenForLatestMessages() {
         val fromId = FirebaseAuth.getInstance().uid
@@ -102,24 +114,9 @@ class LatestMessagesActivity : AppCompatActivity() {
         }
     }
 
-//    private fun fetchCurrentUser() {
-//        val uid = FirebaseAuth.getInstance().uid
-//        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid")
-//        ref.addListenerForSingleValueEvent(object: ValueEventListener {
-//
-//            override fun onDataChange(p0: DataSnapshot) {
-//                currentUser = p0.getValue(User::class.java)
-//                Log.d("LatestMessages", "Current user ${currentUser?.profileImageUrl}")
-//            }
-//
-//            override fun onCancelled(p0: DatabaseError) {
-//
-//            }
-//        })
-//    }
-
     private fun verifyUserIsLoggedIn() {
         val uid = FirebaseAuth.getInstance().uid
+
         if (uid == null) {
             val intent = Intent(this, RegisterActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK.or(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -127,6 +124,7 @@ class LatestMessagesActivity : AppCompatActivity() {
         }
     }
 
+    // remain
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         when (item?.itemId) {
             R.id.menu_new_message -> {
@@ -144,6 +142,7 @@ class LatestMessagesActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item!!)
     }
 
+    // remain
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.nav_menu, menu)
         return super.onCreateOptionsMenu(menu)

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.example.kotlinmessenger2.R
 import com.example.kotlinmessenger2.models.User
@@ -25,6 +26,8 @@ class NewMessageActivity : AppCompatActivity() {
 
     private lateinit var newMessageViewModel: NewMessageViewModel
 
+    val adapter = GroupAdapter<ViewHolder>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_new_message)
@@ -32,32 +35,28 @@ class NewMessageActivity : AppCompatActivity() {
 
         newMessageViewModel = ViewModelProviders.of(this)[NewMessageViewModel::class.java]
 
-        //newMessageViewModel.fetchUsers()
-        fetchUsers()
+        //fetchUsers()
+        newMessageViewModel.fetchUsers()
+
+        setupRecyclerView()
     }
 
-    private fun fetchUsers() {
-        val ref = FirebaseDatabase.getInstance().getReference("/users")
-        ref.addListenerForSingleValueEvent(object: ValueEventListener {
+    private fun setupRecyclerView() {
 
-            override fun onDataChange(p0: DataSnapshot) {
-                //Log.d(TAG, "DataSnapshot: " + p0.value)
-                val adapter = GroupAdapter<ViewHolder>()
+        newMessageViewModel.users.observe(this, Observer { users ->
+
+            for (user in users){
+                Log.d(TAG, "User: "+ user.username)
+
                 val uid = FirebaseAuth.getInstance().uid
-
-                p0.children.forEach {
-                    Log.d("NewMessage", it.toString())
-                    val user = it.getValue(User::class.java)
-                    if (user != null && user.uid != uid) {
-                        adapter.add(
-                            UserItem(
-                                user
-                            )
-                        )
-                    }
+                if (user.uid != uid) {
+                    adapter.add(
+                        UserItem(user)
+                    )
                 }
+            }
 
-                adapter.setOnItemClickListener { item, view ->
+            adapter.setOnItemClickListener { item, view ->
 
                     val userItem = item as UserItem
 
@@ -68,12 +67,7 @@ class NewMessageActivity : AppCompatActivity() {
                     finish()
                 }
 
-                recyclerview_newmessage.adapter = adapter
-            }
-
-            override fun onCancelled(p0: DatabaseError) {
-
-            }
+            recyclerview_newmessage.adapter = adapter
         })
     }
 }
