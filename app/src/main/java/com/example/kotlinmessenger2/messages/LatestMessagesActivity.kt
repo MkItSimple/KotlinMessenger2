@@ -2,7 +2,6 @@ package com.example.kotlinmessenger2.messages
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
@@ -15,10 +14,6 @@ import com.example.kotlinmessenger2.models.ChatMessage
 import com.example.kotlinmessenger2.models.User
 import com.example.kotlinmessenger2.views.LatestMessageRow
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.ChildEventListener
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.ViewHolder
 import kotlinx.android.synthetic.main.activity_latest_messages.*
@@ -27,15 +22,13 @@ class LatestMessagesActivity : AppCompatActivity() {
 
     companion object {
         var currentUser: User? = null
-
         val TAG = "LatestMessages"
+        var latestMessagesMap = HashMap<String, ChatMessage>()
     }
 
     val adapter = GroupAdapter<ViewHolder>()
 
-    val latestMessagesMap = HashMap<String, ChatMessage>()
-
-    private lateinit var latestMessageViewModel: LatestMessageViewModel
+    private lateinit var viewmodel: LatestMessageViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,17 +36,15 @@ class LatestMessagesActivity : AppCompatActivity() {
 
         supportActionBar?.title = "Latest Messages"
 
-        latestMessageViewModel = ViewModelProviders.of(this)[LatestMessageViewModel::class.java]
+        viewmodel = ViewModelProviders.of(this)[LatestMessageViewModel::class.java]
 
         recyclerview_latest_messages.adapter = adapter
         recyclerview_latest_messages.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
         // set item click listener on your adapter
         adapter.setOnItemClickListener { item, view ->
-            Log.d(TAG, "123")
+            //Log.d(TAG, "123")
             val intent = Intent(this, ChatLogActivity::class.java)
-
-            // we are missing the chat partner user
 
             val row = item as LatestMessageRow
             intent.putExtra(NewMessageActivity.USER_KEY, row.chatPartnerUser)
@@ -61,49 +52,29 @@ class LatestMessagesActivity : AppCompatActivity() {
         }
 
         //setupDummyRows()
-        //listenForLatestMessages()
-        latestMessageViewModel.listenForLatestMessages()
-        latestMessageViewModel.chatMessage.observe(this, Observer { chatMessage ->
-            //latestMessagesMap[p0.key!!] = chatMessage
-        })
+        listenForLatestMessages()
 
-        //fetchCurrentUser()
-        latestMessageViewModel.fetchCurrentUser()
-        latestMessageViewModel.currentUser.observe(this, Observer { cUser ->
-            currentUser = cUser
-            //Log.d(TAG, "CurrentUser Name: "+ currentUser?.username)
-        })
+        fetchCurrentUser()
 
         verifyUserIsLoggedIn()
     }
 
-    // move to viewmodel
-    // will notify us every time there is changes in latest-messages on firebase
+    private fun fetchCurrentUser() {
+        viewmodel.fetchCurrentUser()
+        viewmodel.currentUser.observe(this, Observer { cUser ->
+            currentUser = cUser
+            //Log.d(TAG, "CurrentUser Name: "+ currentUser?.username)
+        })
+    }
+
     private fun listenForLatestMessages() {
-        val fromId = FirebaseAuth.getInstance().uid
-        val ref = FirebaseDatabase.getInstance().getReference("/latest-messages/$fromId")
-        ref.addChildEventListener(object: ChildEventListener {
-            override fun onChildAdded(p0: DataSnapshot, p1: String?) {
-                val chatMessage = p0.getValue(ChatMessage::class.java) ?: return
-                latestMessagesMap[p0.key!!] = chatMessage // p0.key belong to the user that we're messaging
-                refreshRecyclerViewMessages()
-            }
 
-            override fun onChildChanged(p0: DataSnapshot, p1: String?) {
-                val chatMessage = p0.getValue(ChatMessage::class.java) ?: return
-                latestMessagesMap[p0.key!!] = chatMessage
-                refreshRecyclerViewMessages()
-            }
+        viewmodel.listenForLatestMessages()
 
-            override fun onChildMoved(p0: DataSnapshot, p1: String?) {
-
-            }
-            override fun onChildRemoved(p0: DataSnapshot) {
-
-            }
-            override fun onCancelled(p0: DatabaseError) {
-
-            }
+        viewmodel.mLatestMessagesMap.observe(this, Observer { mLatestMessagesMap ->
+            latestMessagesMap = mLatestMessagesMap
+            //Log.d(TAG, "latestMessagesMap: "+latestMessagesMap)
+            refreshRecyclerViewMessages()
         })
     }
 
@@ -115,7 +86,7 @@ class LatestMessagesActivity : AppCompatActivity() {
     }
 
     private fun verifyUserIsLoggedIn() {
-        val uid = FirebaseAuth.getInstance().uid
+        val uid = viewmodel.uid()
 
         if (uid == null) {
             val intent = Intent(this, RegisterActivity::class.java)
@@ -124,7 +95,6 @@ class LatestMessagesActivity : AppCompatActivity() {
         }
     }
 
-    // remain
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         when (item?.itemId) {
             R.id.menu_new_message -> {
@@ -142,7 +112,6 @@ class LatestMessagesActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item!!)
     }
 
-    // remain
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.nav_menu, menu)
         return super.onCreateOptionsMenu(menu)
