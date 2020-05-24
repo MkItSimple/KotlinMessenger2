@@ -8,9 +8,11 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import com.example.kotlinmessenger2.messages.LatestMessagesActivity
+import com.example.kotlinmessenger2.models.User
 import com.example.kotlinmessenger2.util.toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.android.synthetic.main.activity_register.*
 import java.util.*
@@ -19,11 +21,27 @@ class RegisterActivity : AppCompatActivity() {
 
     companion object {
         val TAG = "RegisterActivity"
+        val CHANNEL_ID = "MainActivity"
+        val CHANNEL_NAME = "Simplified Coding"
+        val CHANNEL_DESC = "Simplified Coding Notifications"
     }
+
+    private var mAuth: FirebaseAuth = FirebaseAuth.getInstance()
+    private var token: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
+
+        // generate registration token for this device
+        FirebaseInstanceId.getInstance().instanceId
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    token = task.result!!.token
+                    //saveToken(token)
+                    Log.d(TAG, token)
+                }
+            }
 
         register_button_register.setOnClickListener {
             performRegister()
@@ -69,7 +87,7 @@ class RegisterActivity : AppCompatActivity() {
         Log.d("MainActivity", "Email is: " + email)
         Log.d("MainActivity", "Password is: " + password)
 
-        FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
+        mAuth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener {
                 if (!it.isSuccessful) return@addOnCompleteListener
                 Log.d(TAG, "Successfully created user with uid: ${it.result?.user?.uid}")
@@ -93,8 +111,7 @@ class RegisterActivity : AppCompatActivity() {
 
                 ref.downloadUrl.addOnSuccessListener {
                     Log.d(TAG, "File Location: $it")
-
-                    saveUserToFirebaseDatabase(it.toString())
+                    saveUserToFirebaseDatabase(it.toString(), token)
                 }
             }
             .addOnFailureListener {
@@ -102,11 +119,11 @@ class RegisterActivity : AppCompatActivity() {
             }
     }
 
-    private fun saveUserToFirebaseDatabase(profileImageUrl: String) {
+    private fun saveUserToFirebaseDatabase(profileImageUrl: String, token: String?) {
         val uid = FirebaseAuth.getInstance().uid ?: ""
         val ref = FirebaseDatabase.getInstance().getReference("/users/$uid")
 
-        val user = User(uid, username_edittext_register.text.toString(), profileImageUrl)
+        val user = User(uid, username_edittext_register.text.toString(), profileImageUrl, token!!)
 
         ref.setValue(user)
             .addOnSuccessListener {
@@ -121,8 +138,4 @@ class RegisterActivity : AppCompatActivity() {
                 Log.d(TAG, "Failed to set value to database: ${it.message}")
             }
     }
-}
-
-class User(val uid: String, val username: String, val profileImageUrl: String){
-    constructor() : this("", "", "")
 }
