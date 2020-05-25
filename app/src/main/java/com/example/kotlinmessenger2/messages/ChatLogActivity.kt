@@ -101,7 +101,6 @@ class ChatLogActivity : AppCompatActivity() {
             }
 
         })
-
     }
 
     private fun performSendMessage(token: String) {
@@ -144,7 +143,7 @@ class ChatLogActivity : AppCompatActivity() {
             retrofit.create(
                 Api::class.java
             )
-        
+
         val call = api.sendNotification(token, "Choreyn Anania", text)
 
         call?.enqueue(object : Callback<ResponseBody?> {
