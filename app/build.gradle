@@ -37,15 +37,16 @@ dependencies {
 
     implementation 'androidx.recyclerview:recyclerview:1.2.0-alpha03'
 
+    // firebase
     implementation 'com.google.firebase:firebase-auth:19.3.1'
     implementation 'com.google.firebase:firebase-storage:19.1.1'
     implementation 'com.google.firebase:firebase-messaging:20.2.0'
-
     implementation 'com.google.firebase:firebase-auth:19.3.1'
     implementation 'com.google.firebase:firebase-database:19.3.0'
 
-
-
+    // retrofit
+    implementation 'com.squareup.retrofit2:retrofit:2.5.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.5.0'
 
     implementation 'de.hdodenhof:circleimageview:3.0.0'
 

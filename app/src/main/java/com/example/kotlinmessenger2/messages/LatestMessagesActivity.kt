@@ -112,7 +112,7 @@ class LatestMessagesActivity : AppCompatActivity() {
 
             override fun onDataChange(p0: DataSnapshot) {
                 currentUser = p0.getValue(User::class.java)
-                Log.d("LatestMessages", "Current user ${currentUser?.profileImageUrl}")
+                //Log.d("LatestMessages", "Current user ${currentUser?.profileImageUrl}")
             }
 
             override fun onCancelled(p0: DatabaseError) {

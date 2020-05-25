@@ -2,20 +2,27 @@ package com.example.kotlinmessenger2.messages
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.kotlinmessenger2.Api
 import com.example.kotlinmessenger2.R
 import com.example.kotlinmessenger2.models.ChatMessage
 import com.example.kotlinmessenger2.models.User
+import com.example.kotlinmessenger2.util.toast
 import com.example.kotlinmessenger2.views.ChatFromItem
 import com.example.kotlinmessenger2.views.ChatToItem
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.ChildEventListener
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.ViewHolder
 import kotlinx.android.synthetic.main.activity_chat_log.*
+import okhttp3.ResponseBody
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.io.IOException
 
 // Convert to MVVM Dagger2
 class ChatLogActivity : AppCompatActivity() {
@@ -26,7 +33,9 @@ class ChatLogActivity : AppCompatActivity() {
 
     val adapter = GroupAdapter<ViewHolder>()
 
+    private var mAuth: FirebaseAuth = FirebaseAuth.getInstance()
     var toUser: User? = null
+    var token: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +44,9 @@ class ChatLogActivity : AppCompatActivity() {
         recyclerview_chat_log.adapter = adapter
 
         toUser = intent.getParcelableExtra<User>(NewMessageActivity.USER_KEY)
+        token = toUser?.token.toString()
+        val currentUID = mAuth.uid
+        //Toast.makeText(this, "From: $currentUID", Toast.LENGTH_LONG).show()
 
         supportActionBar?.title = toUser?.username
 
@@ -43,27 +55,16 @@ class ChatLogActivity : AppCompatActivity() {
 
         send_button_chat_log.setOnClickListener {
             Log.d(TAG, "Attempt to send message....")
-            performSendMessage()
+            performSendMessage(token!!)
         }
     }
 
     private fun listenForMessages() {
-        val fromId = FirebaseAuth.getInstance().uid
+        val fromId = mAuth.uid
         val toId = toUser?.uid
         val ref = FirebaseDatabase.getInstance().getReference("/user-messages/$fromId/$toId")
 
         ref.addChildEventListener(object: ChildEventListener {
-            override fun onCancelled(p0: DatabaseError) {
-                Log.d(TAG, "onCancelled")
-            }
-
-            override fun onChildMoved(p0: DataSnapshot, p1: String?) {
-                Log.d(TAG, "onChildMoved")
-            }
-
-            override fun onChildChanged(p0: DataSnapshot, p1: String?) {
-                Log.d(TAG, "onChildChanged")
-            }
 
             override fun onChildAdded(p0: DataSnapshot, p1: String?) {
                 val chatMessage = p0.getValue(ChatMessage::class.java)
@@ -71,31 +72,45 @@ class ChatLogActivity : AppCompatActivity() {
                 if (chatMessage != null) {
                     Log.d(TAG, chatMessage.text)
 
-                    if (chatMessage.fromId == FirebaseAuth.getInstance().uid) { // current loggedin user FirebaseAuth.getInstance().uid
-                        val currentUser = LatestMessagesActivity.currentUser
-                        adapter.add(ChatFromItem(chatMessage.text, currentUser!!))
+                    if (chatMessage.fromId == mAuth.uid) {
+                        val currentUser = LatestMessagesActivity.currentUser ?: return
+                        adapter.add(ChatToItem(chatMessage.text, currentUser))
                     } else {
-                        adapter.add(ChatToItem(chatMessage.text, toUser!!))
+                        adapter.add(ChatFromItem(chatMessage.text, toUser!!))
                     }
                 }
 
                 recyclerview_chat_log.scrollToPosition(adapter.itemCount - 1)
+
+            }
+
+            override fun onCancelled(p0: DatabaseError) {
+
+            }
+
+            override fun onChildChanged(p0: DataSnapshot, p1: String?) {
+
+            }
+
+            override fun onChildMoved(p0: DataSnapshot, p1: String?) {
+
             }
 
             override fun onChildRemoved(p0: DataSnapshot) {
-                Log.d(TAG, "onChildRemoved")
+
             }
 
         })
+
     }
 
-    private fun performSendMessage() {
-
+    private fun performSendMessage(token: String) {
+        // how do we actually send a message to firebase...
         val text = edittext_chat_log.text.toString()
 
-        val fromId = FirebaseAuth.getInstance().uid
+        val fromId = mAuth.uid
         val user = intent.getParcelableExtra<User>(NewMessageActivity.USER_KEY)
-        val toId = user?.uid
+        val toId = user!!.uid
 
         if (fromId == null) return
 
@@ -103,7 +118,8 @@ class ChatLogActivity : AppCompatActivity() {
 
         val toReference = FirebaseDatabase.getInstance().getReference("/user-messages/$toId/$fromId").push()
 
-        val chatMessage = ChatMessage(reference.key!!, text, fromId, toId!!, System.currentTimeMillis() / 1000)
+        val chatMessage = ChatMessage(reference.key!!, text, fromId, toId, System.currentTimeMillis() / 1000)
+
         reference.setValue(chatMessage)
             .addOnSuccessListener {
                 Log.d(TAG, "Saved our chat message: ${reference.key}")
@@ -118,5 +134,36 @@ class ChatLogActivity : AppCompatActivity() {
 
         val latestMessageToRef = FirebaseDatabase.getInstance().getReference("/latest-messages/$toId/$fromId")
         latestMessageToRef.setValue(chatMessage)
+
+        // send notification
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://kotlinmessenger-3bcd8.web.app/api/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        val api =
+            retrofit.create(
+                Api::class.java
+            )
+        
+        val call = api.sendNotification(token, "Choreyn Anania", text)
+
+        call?.enqueue(object : Callback<ResponseBody?> {
+            override fun onResponse(
+                call: Call<ResponseBody?>,
+                response: Response<ResponseBody?>
+            ) {
+                try {
+                    toast(response.body()!!.string())
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+            }
+
+            override fun onFailure(
+                call: Call<ResponseBody?>,
+                t: Throwable
+            ) {
+            }
+        })
     }
 }
