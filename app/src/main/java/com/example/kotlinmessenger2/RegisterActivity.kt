@@ -15,6 +15,7 @@ import com.google.firebase.storage.FirebaseStorage
 import kotlinx.android.synthetic.main.activity_register.*
 import java.util.*
 
+// Design Original
 class RegisterActivity : AppCompatActivity() {
 
     companion object {
