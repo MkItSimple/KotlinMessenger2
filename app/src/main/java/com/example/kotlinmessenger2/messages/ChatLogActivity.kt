@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import com.example.kotlinmessenger2.Api
 import com.example.kotlinmessenger2.R
 import com.example.kotlinmessenger2.models.ChatMessage
@@ -36,19 +38,30 @@ class ChatLogActivity : AppCompatActivity() {
     private var mAuth: FirebaseAuth = FirebaseAuth.getInstance()
     var toUser: User? = null
     var token: String? = null
+    var fromUser: User? = null
+
+    private lateinit var viewModel: UsersViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat_log)
 
+        viewModel = ViewModelProviders.of(this).get(UsersViewModel::class.java)
+
         recyclerview_chat_log.adapter = adapter
 
         toUser = intent.getParcelableExtra<User>(NewMessageActivity.USER_KEY)
         token = toUser?.token.toString()
-        val currentUID = mAuth.uid
+        val uid = mAuth.uid
         //Toast.makeText(this, "From: $currentUID", Toast.LENGTH_LONG).show()
 
         supportActionBar?.title = toUser?.username
+
+        viewModel.fetchFilteredUsers(uid!!)
+
+        viewModel.user.observe(this, Observer {
+            Log.d(TAG, "From: ${it.username}")
+        })
 
         listenForMessages()
         //setDummyData()
@@ -57,6 +70,23 @@ class ChatLogActivity : AppCompatActivity() {
             Log.d(TAG, "Attempt to send message....")
             performSendMessage(token!!)
         }
+    }
+
+    private fun fetchFilteredUsers(uid: String){
+        val dbUsers = FirebaseDatabase.getInstance().getReference()
+            .child(uid)
+
+        dbUsers.addListenerForSingleValueEvent(object:ValueEventListener{
+            override fun onCancelled(p0: DatabaseError) {
+                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+
+            override fun onDataChange(snapshot: DataSnapshot) {
+               if (snapshot.exists()){
+                   Log.d(TAG, "From User: " + snapshot.getValue(User::class.java))
+               }
+            }
+        })
     }
 
     private fun listenForMessages() {
@@ -70,7 +100,7 @@ class ChatLogActivity : AppCompatActivity() {
                 val chatMessage = p0.getValue(ChatMessage::class.java)
 
                 if (chatMessage != null) {
-                    Log.d(TAG, chatMessage.text)
+                    //Log.d(TAG, chatMessage.text)
 
                     if (chatMessage.fromId == mAuth.uid) {
                         val currentUser = LatestMessagesActivity.currentUser ?: return
@@ -135,34 +165,34 @@ class ChatLogActivity : AppCompatActivity() {
         latestMessageToRef.setValue(chatMessage)
 
         // send notification
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://kotlinmessenger-3bcd8.web.app/api/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        val api =
-            retrofit.create(
-                Api::class.java
-            )
-
-        val call = api.sendNotification(token, "Choreyn Anania", text)
-
-        call?.enqueue(object : Callback<ResponseBody?> {
-            override fun onResponse(
-                call: Call<ResponseBody?>,
-                response: Response<ResponseBody?>
-            ) {
-                try {
-                    toast(response.body()!!.string())
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-            }
-
-            override fun onFailure(
-                call: Call<ResponseBody?>,
-                t: Throwable
-            ) {
-            }
-        })
+//        val retrofit = Retrofit.Builder()
+//            .baseUrl("https://kotlinmessenger-3bcd8.web.app/api/")
+//            .addConverterFactory(GsonConverterFactory.create())
+//            .build()
+//        val api =
+//            retrofit.create(
+//                Api::class.java
+//            )
+//
+//        val call = api.sendNotification(token, "Choreyn Anania", text)
+//
+//        call?.enqueue(object : Callback<ResponseBody?> {
+//            override fun onResponse(
+//                call: Call<ResponseBody?>,
+//                response: Response<ResponseBody?>
+//            ) {
+//                try {
+//                    toast(response.body()!!.string())
+//                } catch (e: IOException) {
+//                    e.printStackTrace()
+//                }
+//            }
+//
+//            override fun onFailure(
+//                call: Call<ResponseBody?>,
+//                t: Throwable
+//            ) {
+//            }
+//        })
     }
 }
