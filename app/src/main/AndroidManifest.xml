@@ -13,11 +13,6 @@
         tools:ignore="AllowBackup,GoogleAppIndexingWarning">
         <activity android:name=".Splash"
             android:theme="@style/AppTheme.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <activity android:name=".messages.ChatLogActivity">
             <meta-data
@@ -29,7 +24,13 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".messages.LatestMessagesActivity" />
         </activity>
-        <activity android:name=".messages.LatestMessagesActivity"></activity>
+        <activity android:name=".messages.LatestMessagesActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".LoginActivity"
             android:theme="@style/AppTheme.NoActionBar" />

@@ -3,11 +3,13 @@ package com.example.kotlinmessenger2
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.example.kotlinmessenger2.messages.LatestMessagesActivity
 import com.example.kotlinmessenger2.util.toast
 import com.google.firebase.auth.FirebaseAuth
@@ -16,6 +18,7 @@ import com.google.firebase.storage.FirebaseStorage
 import kotlinx.android.synthetic.main.activity_register.*
 import java.util.*
 
+
 // Design Original
 class RegisterActivity : AppCompatActivity() {
 
@@ -23,9 +26,24 @@ class RegisterActivity : AppCompatActivity() {
         val TAG = "RegisterActivity"
     }
 
+    var small_to_big: Animation? = null
+    var bottom_to_top_1: Animation? = null
+    var bottom_to_top_2: Animation? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
+
+        bottom_to_top_1 = AnimationUtils.loadAnimation(this, R.anim.bottom_to_top_1);
+        bottom_to_top_2 = AnimationUtils.loadAnimation(this, R.anim.bottom_to_top_2);
+        small_to_big = AnimationUtils.loadAnimation(this, R.anim.small_to_big);
+
+        selectphoto_button_register.startAnimation(small_to_big);
+        username_edittext_register.startAnimation(bottom_to_top_1);
+        email_edittext_register.startAnimation(bottom_to_top_1);
+        password_edittext_register.startAnimation(bottom_to_top_1);
+        register_button_register.startAnimation(bottom_to_top_2);
+        already_have_account_text_view.startAnimation(bottom_to_top_2);
 
         register_button_register.setOnClickListener {
             performRegister()

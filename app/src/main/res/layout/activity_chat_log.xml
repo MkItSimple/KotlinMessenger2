@@ -8,6 +8,7 @@
     android:background="@android:color/white">
 
     <EditText
+        android:focusableInTouchMode="true"
         android:id="@+id/edittext_chat_log"
         android:layout_width="0dp"
         android:layout_height="50dp"

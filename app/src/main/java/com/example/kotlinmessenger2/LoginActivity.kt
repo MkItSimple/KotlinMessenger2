@@ -4,6 +4,8 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.widget.Toast
 import com.example.kotlinmessenger2.messages.LatestMessagesActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -11,10 +13,20 @@ import kotlinx.android.synthetic.main.activity_login.*
 
 class LoginActivity : AppCompatActivity() {
 
+    var small_to_big: Animation? = null
+    var bottom_to_top_1: Animation? = null
+    var bottom_to_top_2: Animation? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_login)
+
+        bottom_to_top_1 = AnimationUtils.loadAnimation(this, R.anim.bottom_to_top_1);
+        bottom_to_top_2 = AnimationUtils.loadAnimation(this, R.anim.bottom_to_top_2);
+        small_to_big = AnimationUtils.loadAnimation(this, R.anim.small_to_big);
+
+
 
         login_button_login.setOnClickListener {
             performLogin()
