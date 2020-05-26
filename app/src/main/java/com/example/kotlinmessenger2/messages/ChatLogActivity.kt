@@ -38,7 +38,7 @@ class ChatLogActivity : AppCompatActivity() {
     private var mAuth: FirebaseAuth = FirebaseAuth.getInstance()
     var toUser: User? = null
     var token: String? = null
-    var fromUser: User? = null
+    var currentUser: User? = null
 
     private lateinit var viewModel: UsersViewModel
 
@@ -57,11 +57,7 @@ class ChatLogActivity : AppCompatActivity() {
 
         supportActionBar?.title = toUser?.username
 
-        viewModel.fetchFilteredUsers(uid!!)
-
-        viewModel.user.observe(this, Observer {
-            Log.d(TAG, "From: ${it.username}")
-        })
+        getCurrentUser(uid!!)
 
         listenForMessages()
         //setDummyData()
@@ -70,6 +66,14 @@ class ChatLogActivity : AppCompatActivity() {
             Log.d(TAG, "Attempt to send message....")
             performSendMessage(token!!)
         }
+    }
+
+    private fun getCurrentUser(uid: String) {
+        viewModel.fetchFilteredUsers(uid)
+
+        viewModel.user.observe(this, Observer {
+            currentUser = it
+        })
     }
 
     private fun fetchFilteredUsers(uid: String){
@@ -140,6 +144,7 @@ class ChatLogActivity : AppCompatActivity() {
         val fromId = mAuth.uid
         val user = intent.getParcelableExtra<User>(NewMessageActivity.USER_KEY)
         val toId = user!!.uid
+        val fromUsername = currentUser!!.username
 
         if (fromId == null) return
 
@@ -165,34 +170,34 @@ class ChatLogActivity : AppCompatActivity() {
         latestMessageToRef.setValue(chatMessage)
 
         // send notification
-//        val retrofit = Retrofit.Builder()
-//            .baseUrl("https://kotlinmessenger-3bcd8.web.app/api/")
-//            .addConverterFactory(GsonConverterFactory.create())
-//            .build()
-//        val api =
-//            retrofit.create(
-//                Api::class.java
-//            )
-//
-//        val call = api.sendNotification(token, "Choreyn Anania", text)
-//
-//        call?.enqueue(object : Callback<ResponseBody?> {
-//            override fun onResponse(
-//                call: Call<ResponseBody?>,
-//                response: Response<ResponseBody?>
-//            ) {
-//                try {
-//                    toast(response.body()!!.string())
-//                } catch (e: IOException) {
-//                    e.printStackTrace()
-//                }
-//            }
-//
-//            override fun onFailure(
-//                call: Call<ResponseBody?>,
-//                t: Throwable
-//            ) {
-//            }
-//        })
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://kotlinmessenger-3bcd8.web.app/api/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        val api =
+            retrofit.create(
+                Api::class.java
+            )
+
+        val call = api.sendNotification(token, fromUsername, text)
+
+        call?.enqueue(object : Callback<ResponseBody?> {
+            override fun onResponse(
+                call: Call<ResponseBody?>,
+                response: Response<ResponseBody?>
+            ) {
+                try {
+                    toast(response.body()!!.string())
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+            }
+
+            override fun onFailure(
+                call: Call<ResponseBody?>,
+                t: Throwable
+            ) {
+            }
+        })
     }
 }
