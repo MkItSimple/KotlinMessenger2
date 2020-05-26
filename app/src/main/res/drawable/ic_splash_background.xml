@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-<!--    <solid android:color="@android:color/holo_green_dark"/>-->
+    <!--    <solid android:color="@android:color/holo_green_dark"/>-->
     <gradient
         android:angle="180"
-        android:startColor="#e400ff"
-        android:endColor="#f34444"
+        android:startColor="#815df6"
+        android:endColor="#1773eb"
         android:type="linear" />
-    <corners android:radius="25dp"/>
 </shape>

@@ -13,15 +13,17 @@
         android:layout_marginStart="10dp"
         android:maxWidth="240dp"
         android:text="This is my message that will wrap into multipole lines and keep on going"
+        android:fontFamily="@font/montserrat_regular"
+        android:textColor="#000"
         android:background="@drawable/rounded_edittext_register_login"
-        android:padding="16dp"
+        android:padding="10dp"
         app:layout_constraintStart_toEndOf="@+id/imageview_chat_from_row"
         app:layout_constraintTop_toTopOf="@+id/imageview_chat_from_row"/>
 
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/imageview_chat_from_row"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
         android:layout_marginLeft="10dp"
         android:layout_marginStart="20dp"
         android:layout_marginTop="10dp"

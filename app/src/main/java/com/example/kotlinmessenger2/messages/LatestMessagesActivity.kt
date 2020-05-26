@@ -39,7 +39,6 @@ class LatestMessagesActivity : AppCompatActivity() {
         viewmodel = ViewModelProviders.of(this)[LatestMessageViewModel::class.java]
 
         recyclerview_latest_messages.adapter = adapter
-        recyclerview_latest_messages.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
         // set item click listener on your adapter
         adapter.setOnItemClickListener { item, view ->

@@ -1,7 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
+<!--    <solid android:color="@android:color/holo_green_dark"/>-->
+    <gradient
+        android:angle="180"
+        android:startColor="#fff"
+        android:endColor="#fff"
+        android:type="linear" />
 
-    <solid android:color="@android:color/holo_green_dark"/>
+<!--    <gradient-->
+<!--        android:angle="180"-->
+<!--        android:startColor="#2196f3"-->
+<!--        android:endColor="#2979ff"-->
+<!--        android:type="linear" />
+
+e400ff pink
+f34444
+
+-->
+
     <corners android:radius="75dp"/>
-
 </shape>

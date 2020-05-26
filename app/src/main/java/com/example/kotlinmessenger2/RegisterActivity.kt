@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import com.example.kotlinmessenger2.messages.LatestMessagesActivity
 import com.example.kotlinmessenger2.util.toast
 import com.google.firebase.auth.FirebaseAuth
@@ -64,11 +65,17 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun performRegister(){
+        val username = username_edittext_register.text.toString()
         val email = email_edittext_register.text.toString()
         val password = password_edittext_register.text.toString()
 
-        Log.d("MainActivity", "Email is: " + email)
-        Log.d("MainActivity", "Password is: " + password)
+        //Log.d("MainActivity", "Email is: " + email)
+        //Log.d("MainActivity", "Password is: " + password)
+        if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Please fill out all fields.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
 
         FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener {
