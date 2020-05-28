@@ -1,30 +1,29 @@
 package com.example.kotlinmessenger2.messages
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import com.example.kotlinmessenger2.Api
 import com.example.kotlinmessenger2.R
-import com.example.kotlinmessenger2.models.ChatMessage
-import com.example.kotlinmessenger2.models.User
+import com.example.kotlinmessenger2.models.*
 import com.example.kotlinmessenger2.util.toast
 import com.example.kotlinmessenger2.views.ChatFromItem
 import com.example.kotlinmessenger2.views.ChatToItem
+import com.example.kotlinmessenger2.views.ImageFromItem
+import com.example.kotlinmessenger2.views.ImageToItem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.google.firebase.storage.FirebaseStorage
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.ViewHolder
 import kotlinx.android.synthetic.main.activity_chat_log.*
-import okhttp3.ResponseBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import java.io.IOException
+import java.util.*
 
 // Convert to MVVM Dagger2
 class ChatLogActivity : AppCompatActivity() {
@@ -63,10 +62,86 @@ class ChatLogActivity : AppCompatActivity() {
         //setDummyData()
 
         send_button_chat_log.setOnClickListener {
-            Log.d(TAG, "Attempt to send message....")
+            Log.d(TAG, "Attempt to send text message....")
             performSendMessage(token!!)
         }
+
+        send_image.setOnClickListener {
+            Log.d(TAG, "Attempt to send image message....")
+
+            val intent = Intent(Intent.ACTION_PICK)
+            intent.type = "image/*"
+            startActivityForResult(intent, 0)
+        }
     }
+
+    var selectedPhotoUri: Uri? = null // we put this outide the function . . so that we can use it later on
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == 0 && resultCode == Activity.RESULT_OK && data != null) {
+            // proceed and check what the selected image was....
+            Log.d(TAG, "Photo was selected")
+
+            selectedPhotoUri = data.data // is the uri . . basically where that image stored in the device
+            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, selectedPhotoUri)  // before we can use selectedImagePath we need to  make it as bitmap
+
+            uploadImageToFirebaseStorage()
+        }
+    }
+
+    // upload image to firebase storage
+    private fun uploadImageToFirebaseStorage() {
+        if (selectedPhotoUri == null) return
+
+        val filename = UUID.randomUUID().toString()
+        val ref = FirebaseStorage.getInstance().getReference("/messages/$filename")
+
+        ref.putFile(selectedPhotoUri!!)
+            .addOnSuccessListener {
+                Log.d(TAG, "Successfully uploaded image: ${it.metadata?.path}")
+
+                ref.downloadUrl.addOnSuccessListener {
+                    Log.d(TAG, "File Location: $it")
+                    //saveUserToFirebaseDatabase(it.toString(), token)
+                    performSendImageMessage(it.toString(), token!!)
+                }
+            }
+            .addOnFailureListener {
+                Log.d(TAG, "Failed to upload image to storage: ${it.message}")
+            }
+    }
+
+    private fun performSendImageMessage(fileLocation: String, token: String) {
+        val fromId = mAuth.uid
+        val user = intent.getParcelableExtra<User>(NewMessageActivity.USER_KEY)
+        val toId = user!!.uid
+
+        if (fromId == null) return
+
+        // chat copy for sender
+        val reference = FirebaseDatabase.getInstance().getReference("/user-messages/$fromId/$toId").push()
+
+        // chat copy for reciever
+        val toReference = FirebaseDatabase.getInstance().getReference("/user-messages/$toId/$fromId").push()
+
+        val imageMessage = ImageMessage(reference.key!!, fileLocation, fromId, toId, System.currentTimeMillis() / 1000)
+
+        //Log.d("ImageMessage", "Image Path: " + imageMessage.imagePath + "Image Type:" + imageMessage.type)
+
+        // setValue inerted the chat to database . . . then scroll recyclerview to the bottom
+        reference.setValue(imageMessage)
+            .addOnSuccessListener {
+                Log.d(TAG, "Saved our chat message: ${reference.key}")
+                edittext_chat_log.text.clear()
+                recyclerview_chat_log.scrollToPosition(adapter.itemCount - 1)
+            }
+
+        toReference.setValue(imageMessage)
+    }
+
+
 
     private fun getCurrentUser(uid: String) {
         viewModel.fetchFilteredUsers(uid)
@@ -93,6 +168,7 @@ class ChatLogActivity : AppCompatActivity() {
         })
     }
 
+    // when new  message added do this
     private fun listenForMessages() {
         val fromId = mAuth.uid
         val toId = toUser?.uid
@@ -102,15 +178,26 @@ class ChatLogActivity : AppCompatActivity() {
 
             override fun onChildAdded(p0: DataSnapshot, p1: String?) {
                 val chatMessage = p0.getValue(ChatMessage::class.java)
+                Log.d(TAG, "chatMessage: " + chatMessage!!.type)
 
-                if (chatMessage != null) {
-                    //Log.d(TAG, chatMessage.text)
-
+                if (chatMessage.type == MessageType.TEXT) {
                     if (chatMessage.fromId == mAuth.uid) {
                         val currentUser = LatestMessagesActivity.currentUser ?: return
+                        //adapter.add(ChatToItem(chatMessage.text, currentUser))
                         adapter.add(ChatToItem(chatMessage.text, currentUser))
                     } else {
                         adapter.add(ChatFromItem(chatMessage.text, toUser!!))
+                    }
+
+                } else {
+                    val imageMessage = p0.getValue(ImageMessage::class.java)
+
+                    if (chatMessage.fromId == mAuth.uid) {
+                        val currentUser = LatestMessagesActivity.currentUser ?: return
+                        //adapter.add(ChatToItem(chatMessage.text, currentUser))
+                        adapter.add(ImageToItem(imageMessage!!.imagePath, currentUser))
+                    } else {
+                        adapter.add(ImageFromItem(imageMessage!!.imagePath, toUser!!))
                     }
                 }
 
@@ -148,56 +235,66 @@ class ChatLogActivity : AppCompatActivity() {
 
         if (fromId == null) return
 
+        // chat copy for sender
         val reference = FirebaseDatabase.getInstance().getReference("/user-messages/$fromId/$toId").push()
 
+        // chat copy for reciever
         val toReference = FirebaseDatabase.getInstance().getReference("/user-messages/$toId/$fromId").push()
 
-        val chatMessage = ChatMessage(reference.key!!, text, fromId, toId, System.currentTimeMillis() / 1000)
+        // this is the message we're going to send
+        val message = ChatMessage(reference.key!!, text, fromId, toId, System.currentTimeMillis() / 1000)
 
-        reference.setValue(chatMessage)
+        //Log.d(TAG, "ChatMessage: "+message)
+
+        // setValue inerted the chat to database . . . then scroll recyclerview to the bottom
+        reference.setValue(message)
             .addOnSuccessListener {
                 Log.d(TAG, "Saved our chat message: ${reference.key}")
                 edittext_chat_log.text.clear()
                 recyclerview_chat_log.scrollToPosition(adapter.itemCount - 1)
             }
 
-        toReference.setValue(chatMessage)
+        toReference.setValue(message)
 
+        // here we are giving both users the copy of latest message
         val latestMessageRef = FirebaseDatabase.getInstance().getReference("/latest-messages/$fromId/$toId")
-        latestMessageRef.setValue(chatMessage)
+        latestMessageRef.setValue(message)
 
         val latestMessageToRef = FirebaseDatabase.getInstance().getReference("/latest-messages/$toId/$fromId")
-        latestMessageToRef.setValue(chatMessage)
+        latestMessageToRef.setValue(message)
 
-        // send notification
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://kotlinmessenger-3bcd8.web.app/api/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        val api =
-            retrofit.create(
-                Api::class.java
-            )
+//        // send notification
+//        val retrofit = Retrofit.Builder()
+//            .baseUrl("https://kotlinmessenger-3bcd8.web.app/api/")
+//            .addConverterFactory(GsonConverterFactory.create())
+//            .build()
+//        val api =
+//            retrofit.create(
+//                Api::class.java
+//            )
+//
+//        val call = api.sendNotification(token, fromUsername, text)
+//
+//        call?.enqueue(object : Callback<ResponseBody?> {
+//            override fun onResponse(
+//                call: Call<ResponseBody?>,
+//                response: Response<ResponseBody?>
+//            ) {
+//                try {
+//                    toast(response.body()!!.string())
+//                } catch (e: IOException) {
+//                    e.printStackTrace()
+//                }
+//            }
+//
+//            override fun onFailure(
+//                call: Call<ResponseBody?>,
+//                t: Throwable
+//            ) {
+//            }
+//        })
 
-        val call = api.sendNotification(token, fromUsername, text)
-
-        call?.enqueue(object : Callback<ResponseBody?> {
-            override fun onResponse(
-                call: Call<ResponseBody?>,
-                response: Response<ResponseBody?>
-            ) {
-                try {
-                    toast(response.body()!!.string())
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-            }
-
-            override fun onFailure(
-                call: Call<ResponseBody?>,
-                t: Throwable
-            ) {
-            }
-        })
     }
+
+
 }

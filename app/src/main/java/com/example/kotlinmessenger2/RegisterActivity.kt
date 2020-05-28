@@ -64,7 +64,7 @@ class RegisterActivity : AppCompatActivity() {
         }
     }
 
-    var selectedPhotoUri: Uri? = null
+    var selectedPhotoUri: Uri? = null // we put this outide the function . . so that we can use it later on
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -73,9 +73,9 @@ class RegisterActivity : AppCompatActivity() {
             // proceed and check what the selected image was....
             Log.d(TAG, "Photo was selected")
 
-            selectedPhotoUri = data.data
-            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, selectedPhotoUri)
-            selectphoto_imageview_register.setImageBitmap(bitmap)
+            selectedPhotoUri = data.data // is the uri . . basically where that image stored in the device
+            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, selectedPhotoUri)  // before we can use selectedImagePath we need to  make it as bitmap
+            selectphoto_imageview_register.setImageBitmap(bitmap) // we put the image to our selectphoto_imageview_register
             selectphoto_button_register.alpha = 0f
         }
     }
