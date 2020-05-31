@@ -8,8 +8,10 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import com.example.kotlinmessenger2.messages.LatestMessagesActivity
+import com.example.kotlinmessenger2.models.User
 import com.example.kotlinmessenger2.util.toast
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.android.synthetic.main.activity_register.*
@@ -74,6 +76,7 @@ class RegisterActivity : AppCompatActivity() {
                 if (!it.isSuccessful) return@addOnCompleteListener
                 Log.d(TAG, "Successfully created user with uid: ${it.result?.user?.uid}")
                 uploadImageToFirebaseStorage()
+                saveUserToFirebaseDatabase(selectedPhotoUri.toString()!!)
             }
             .addOnFailureListener{
                 Log.d(TAG, "Failed to create user: ${it.message}")
@@ -93,8 +96,7 @@ class RegisterActivity : AppCompatActivity() {
 
                 ref.downloadUrl.addOnSuccessListener {
                     Log.d(TAG, "File Location: $it")
-
-                    saveUserToFirebaseDatabase(it.toString())
+                    //saveUserToFirebaseDatabase(it.toString())
                 }
             }
             .addOnFailureListener {
@@ -115,14 +117,9 @@ class RegisterActivity : AppCompatActivity() {
                 val intent = Intent(this, LatestMessagesActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK.or(Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(intent)
-
             }
             .addOnFailureListener {
                 Log.d(TAG, "Failed to set value to database: ${it.message}")
             }
     }
-}
-
-class User(val uid: String, val username: String, val profileImageUrl: String){
-    constructor() : this("", "", "")
 }
