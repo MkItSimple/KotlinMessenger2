@@ -34,6 +34,11 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
+    // androidx.fragment
+    def fragment_version = "1.2.0-rc01" // must use for new factory stuff
+    debugImplementation "androidx.fragment:fragment-testing:$fragment_version"
+    implementation "androidx.fragment:fragment:$fragment_version"
+
     implementation 'androidx.recyclerview:recyclerview:1.2.0-alpha01'
 
     implementation 'com.google.firebase:firebase-core:17.2.2'
