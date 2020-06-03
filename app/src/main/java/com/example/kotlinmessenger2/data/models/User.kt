@@ -1,4 +1,4 @@
-package com.example.kotlinmessenger2.models
+package com.example.kotlinmessenger2.data.models
 
 import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize

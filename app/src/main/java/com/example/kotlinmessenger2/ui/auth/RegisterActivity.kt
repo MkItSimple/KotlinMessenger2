@@ -8,7 +8,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.example.kotlinmessenger2.R
-import com.example.kotlinmessenger2.models.User
+import com.example.kotlinmessenger2.data.models.User
 import com.example.kotlinmessenger2.ui.messages.LatestMessagesActivity
 import com.example.kotlinmessenger2.utils.toast
 import com.google.firebase.auth.FirebaseAuth
@@ -108,7 +108,11 @@ class RegisterActivity : AppCompatActivity() {
         val uid = FirebaseAuth.getInstance().uid ?: ""
         val ref = FirebaseDatabase.getInstance().getReference("/users/$uid")
 
-        val user = User(uid, username_edittext_register.text.toString(), profileImageUrl)
+        val user = User(
+            uid,
+            username_edittext_register.text.toString(),
+            profileImageUrl
+        )
 
         ref.setValue(user)
             .addOnSuccessListener {
